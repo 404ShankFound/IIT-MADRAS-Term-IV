@@ -1,0 +1,36 @@
+from math import gcd, lcm
+from secrets import randbelow
+from Crypto.Util.number import getPrime, inverse
+
+from math import gcd
+from Crypto.Util.number import getPrime, inverse
+
+from time import perf_counter
+from secrets import randbelow
+
+pip install concrete
+
+- PyCryptodome — the only external package:
+  - Crypto.Cipher: AES, DES, DES3, PKCS1_OAEP
+  - Crypto.PublicKey: RSA, ElGamal, ECC, DSA
+  - Crypto.Hash: SHA256
+  - Crypto.Util.Padding: pad, unpad
+  - Crypto.Util.number: getPrime
+  - Crypto.Protocol.DH: key_agreement
+  - Crypto.Signature: pkcs1_15
+- Python standard library—no installation needed: pathlib, ast, json, re, datetime, time, getpass, math, hashlib, hmac, secrets, os, decimal.
+- Tests additionally use: contextlib, io, tempfile, types, unittest, unittest.mock.
+import random
+import secrets
+import hashlib
+import hmac
+import math
+import base64
+import json
+import re
+
+from phe import paillier
+
+import hashlib
+import pickle
+from datetime import datetime

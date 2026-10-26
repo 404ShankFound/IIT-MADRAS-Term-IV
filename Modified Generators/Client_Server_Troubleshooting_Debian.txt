@@ -1,0 +1,634 @@
+CLIENT-SERVER LAB GUIDE: DEBIAN LINUX + PYCHARM
+For the client.py/server.py produced by your updated generator.
+
+This covers common startup, port, connection, login, record, crypto and tally
+errors. It cannot list every possible system error. Keep the full error text
+if your problem is not listed. Windows/PowerShell commands do NOT apply here.
+
+1. WHICH FILE DOES WHAT?
+
+  generator.py = Run once to generate your application.
+  server.py    = Receives requests, verifies/stores records, searches and tallies.
+  client.py    = Shows role menus, collects inputs and contacts the server.
+
+You need TWO running programs, in TWO terminals. The generator does not need
+to stay running. The supplied sample client/server implement the voting example;
+your own generated pair uses your chosen fields, algorithms and permissions.
+
+2. BEFORE THE EXAM: CHECK PYTHON AND THE DEPENDENCY
+
+Open your project in PyCharm. Open its Terminal tool window and use a normal
+Linux shell. If the Terminal tab is not visible, use PyCharm's tool-window menu
+or search its actions for Terminal. These instructions use terminal commands,
+so you do not need to configure PyCharm Run buttons.
+
+Run in a terminal:
+
+    python3 --version
+    python3 -c "import sys; print(sys.executable)"
+    python3 -c "import Crypto; print(Crypto.__version__)"
+
+The generated application requires Python 3.9+ and PyCryptodome.
+The module name is Crypto; the package name is pycryptodome.
+
+IMPORTANT: PyCharm's configured Python interpreter and the terminal's python3
+can be different. If Crypto imports in one but not the other, use the interpreter
+that has the dependency for BOTH server and client. For example, replace python3
+in all commands with the actual Python executable path configured in PyCharm.
+
+If PyCryptodome is missing, arrange installation BEFORE the offline exam.
+In a Python environment where pip installation is allowed, the command is:
+
+    python3 -m pip install pycryptodome
+
+Then rerun the import check. Use the same interpreter for installation and running.
+This needs internet or an available compatible local package/wheel.
+
+DEBIAN-SPECIFIC NOTE: Debian's python3-pycryptodome package can provide the
+Cryptodome namespace, whereas these generated files import Crypto. Therefore,
+"the Debian package is installed" does not by itself prove these files will run.
+Check explicitly:
+
+    python3 -c "import Crypto; print(Crypto.__file__)"
+    python3 -c "import Cryptodome; print(Cryptodome.__file__)"
+
+If only Cryptodome works, tell the lab administrator about this namespace
+mismatch and arrange a compatible interpreter or reviewed import adaptation
+before the exam. Do not rename installed library directories or assume the
+unrelated package named crypto fixes it.
+
+If the lab machine is offline and has neither the dependency nor a compatible
+local installer/package, changing the port or the IDE cannot fix that missing
+dependency. Ask the lab staff in advance.
+
+If pip reports "externally-managed-environment", Debian is protecting its system
+Python. Ask the administrator for a supported interpreter/dependency setup,
+especially if virtual environments are prohibited by your lab. Do not use
+sudo pip or --break-system-packages as an exam-time workaround.
+
+3. GENERATE YOUR APPLICATION
+
+In a terminal, go to the directory containing generator.py.
+Example ONLY: replace /home/student/crypto_lab with your actual folder.
+
+    cd "/home/student/crypto_lab"
+    ls
+    python3 generator.py
+
+Choose:
+    1 = single-process application -> solution.py
+    2 = client-server application -> client.py and server.py
+
+For client-server, configure your fields, algorithms, roles and permissions.
+Use host 127.0.0.1 and port 5000 initially.
+Choose a NEW output folder. Note the exact path printed by the generator.
+
+After generation, BOTH runtime terminals must be in the output folder that
+contains client.py and server.py. They do not run from the generator folder
+unless that is actually where you generated them.
+
+4. NORMAL STARTUP: EXACTLY WHAT TO RUN WHERE
+
+Open two terminal tabs/sessions inside PyCharm (or two Debian terminal windows).
+Label them mentally as SERVER and CLIENT. Use a third tab for diagnostics if
+needed. Do not try to type shell commands into a running Python program's menu.
+
+TERMINAL 1: SERVER
+Replace the example directory with your generated output folder:
+
+    cd "/home/student/crypto_lab/generated_app"
+    pwd
+    ls
+    CRYPTO_HOST=127.0.0.1 CRYPTO_PORT=5000 python3 server.py
+
+First server run asks for:
+  - Submission start/deadline, if configured.
+  - A password and confirmation for each configured identity.
+  - Passwords for Authority 1 and Authority 2.
+
+Passwords are hidden: no letters or stars may appear while you type.
+Type the password and press Enter. This is normal.
+
+Date format: YYYY-MM-DD HH:MM:SS
+The application uses IST (UTC+05:30), even on a Debian machine whose desktop
+clock/timezone is different. Enter a period that includes the current IST time.
+The deadline must be later than the start.
+
+RSA-4096 and other key generation can take time on an old computer. Wait for:
+
+    Listening on 127.0.0.1:5000. Ctrl+C to stop.
+
+Do not start the client before the server reaches Listening.
+Keep Terminal 1 running. It waits for requests; that is normal, not a freeze.
+
+TERMINAL 2: CLIENT
+Use the SAME output folder:
+
+    cd "/home/student/crypto_lab/generated_app"
+    CRYPTO_HOST=127.0.0.1 CRYPTO_PORT=5000 python3 client.py
+
+Select your identity, enter its password and choose an allowed operation.
+Server-side operation prompts also appear in the CLIENT terminal.
+The server performs those operations and returns results over TCP.
+
+No internet is required for same-computer communication over 127.0.0.1.
+Python and PyCryptodome still need to be installed already.
+
+5. HOW TO PICK A PORT
+
+Use 5000 first. If unavailable, try 5050, 5051, 8001 or another unused port.
+There is no special crypto meaning to the number. Use the SAME port at both ends.
+Prefer a port above 1023, below 65536. Do not use port 0: it asks the operating
+system to choose a port, which this client will not discover automatically.
+No particular port, including 5000 or 5050, is guaranteed to be free.
+
+The command prefix CRYPTO_PORT=5050 sets the value for that command only.
+It overrides the generated default without editing or regenerating the files.
+Repeat it whenever restarting. Setting it for the server does not set it for
+the client in another terminal.
+
+To change to 5050:
+
+TERMINAL 1: stop your old server with Ctrl+C, then run:
+
+    CRYPTO_HOST=127.0.0.1 CRYPTO_PORT=5050 python3 server.py
+
+TERMINAL 2: exit the old client, then run:
+
+    CRYPTO_HOST=127.0.0.1 CRYPTO_PORT=5050 python3 client.py
+
+Changing the port does NOT delete records or regenerate keys.
+
+Alternative: in EACH terminal, you may use:
+
+    export CRYPTO_HOST=127.0.0.1
+    export CRYPTO_PORT=5050
+
+Then run python3 server.py in Terminal 1 and python3 client.py in Terminal 2.
+The export form lasts for that shell session; the command-prefix form is simpler
+and avoids accidentally reusing an old exported port.
+
+6. PORT / CONNECTION ERRORS
+
+A. "Address already in use" / OSError: [Errno 98]
+
+Meaning: another listener is already using that address/port. Often you left
+an earlier copy of server.py running in another tab or PyCharm Run console.
+
+Fix:
+  1. Look for your old server and stop YOUR copy with Ctrl+C or its Stop button.
+  2. Or switch BOTH programs to 5050 using section 5.
+  3. Wait for the new Listening message.
+
+Optional diagnostic in TERMINAL 3:
+
+    ss -ltnp 'sport = :5000'
+
+If a listening entry appears, port 5000 is occupied. Process details for other
+users may be hidden. Do not kill an unfamiliar process; choose another port.
+If ss is unavailable, skip the diagnostic and try another port.
+
+B. "Connection refused" / ConnectionRefusedError: [Errno 111]
+
+Meaning: the client could not find a listener at the selected host/port.
+
+Check in order:
+  1. Is the server still running in Terminal 1?
+  2. Did it finish setup and print Listening?
+  3. Do both commands use 127.0.0.1 and the SAME port?
+  4. Are you using client.py and server.py from the SAME generated application?
+  5. Did the server exit with an error? Read Terminal 1.
+
+Start/restart the server, then retry the client. If the client returned to its
+identity menu, select the identity again. If it exited, rerun the client command.
+
+C. "Permission denied" / OSError: [Errno 13] while binding a socket
+
+Use an unused port above 1023, such as 5050. A security policy may also block
+binding. Ask lab staff if a high localhost port remains blocked.
+Do not run the whole application with sudo just to try random fixes.
+If the error names a FILE rather than a socket, see section 10 instead.
+
+D. "Cannot assign requested address" / OSError: [Errno 99]
+
+The chosen bind address is not available on this computer.
+For this same-computer exercise, explicitly run BOTH with:
+
+    CRYPTO_HOST=127.0.0.1 CRYPTO_PORT=5000 python3 server.py
+    CRYPTO_HOST=127.0.0.1 CRYPTO_PORT=5000 python3 client.py
+
+Those two lines belong in different terminals, as in section 4.
+This generated server uses IPv4. Prefer 127.0.0.1 rather than ::1.
+
+E. "Name or service not known" / socket.gaierror
+
+Usually an invalid host name or typo. Use 127.0.0.1 for the same computer.
+Do not enter a URL such as http://127.0.0.1 or put :5000 into the host field.
+Host and port are separate values.
+
+F. "timed out" / TimeoutError / socket.timeout
+
+Check server output, matching host/port and whether another client is busy.
+The generated server handles one request at a time. A pending interactive
+server operation can delay others. Connected operations have a 120-second
+socket timeout; answer their prompts promptly. Client connection timeout is
+10 seconds. Slow key generation/operations can also contribute to delays.
+
+Finish/close the other active request, check that the server is responsive,
+and retry. Do not launch many copies to solve a timeout.
+
+G. "Connection reset by peer", "Broken pipe", or "Connection closed"
+
+The connection ended during the operation. The server/client may have stopped,
+timed out or rejected malformed traffic.
+
+Read Terminal 1, restart the server if needed and reconnect the client.
+IMPORTANT: if the error happened AFTER submission or aggregation was sent,
+the operation MAY already have completed. Check records or the saved aggregate
+before retrying. A lost response does not prove the operation failed.
+
+For a submission, look up its original ID or use View own records. If it exists,
+do not submit the same real-world ballot again under a new ID.
+
+H. "Invalid literal for int()" / invalid or out-of-range port
+
+Use plain digits only, for example:
+
+    CRYPTO_PORT=5050 python3 server.py
+
+Do not use "port5050", "5050,", a URL, a negative number or 65536+.
+
+I. Wrong service / "Invalid server response" / "Invalid message size"
+
+You may have connected to a different program listening on that port, mixed
+client/server versions, or sent oversized/corrupt data. Check the exact generated
+pair and the server's Listening message. Use a different matching port if needed.
+The protocol is length-prefixed JSON, not HTTP. Do not test it by opening the
+address in a web browser or sending an HTTP POST request.
+
+7. PYCHARM / PYTHON / STARTUP ERRORS
+
+A. "python: command not found"
+Use python3 rather than python. If python3 is also missing, ask lab staff to
+provide Python. PyCharm itself does not replace the Python interpreter.
+
+B. "can't open file ... server.py" / [Errno 2] No such file or directory
+You are in the wrong directory or the filename is incorrect.
+
+In the affected terminal:
+
+    pwd
+    ls
+    cd "/actual/path/to/generated_folder"
+    ls
+
+Then rerun the appropriate server/client command.
+Linux filenames are case-sensitive: server.py and Server.py are different.
+Quote paths containing spaces. Use the actual path, not this example literally.
+If you downloaded a ZIP, extract it before trying to run its files.
+
+C. "ModuleNotFoundError: No module named 'Crypto'"
+PyCryptodome is missing from the interpreter you ran, or you selected the wrong
+interpreter. Use the interpreter and namespace checks in section 2.
+Do not install an unrelated package named crypto as a substitute.
+
+D. Import error / "partially initialized module" / unexpected module location
+A file in your own folder may be shadowing a real library. Avoid naming your
+scripts socket.py, json.py, hashlib.py, ssl.py or Crypto.py, or creating a local
+Crypto folder. Rename only your conflicting file, not the installed library.
+Restart the program. If needed, check the resolved module:
+
+    python3 -c "import socket; print(socket.__file__)"
+    python3 -c "import Crypto; print(Crypto.__file__)"
+
+E. SyntaxError / IndentationError / import failure for math.lcm
+Use the complete downloaded generated files, not partially pasted snippets.
+Check python3 --version: this application needs Python 3.9+.
+For a syntax check, in the generated folder run:
+
+    python3 -m py_compile client.py server.py
+
+Successful compilation normally prints nothing. It checks syntax, not full
+runtime behavior or dependency installation. Do not fix errors by deleting
+arbitrary lines; restore the matching files or record the exact traceback.
+
+F. Password shows nothing / "GetPassWarning"
+Hidden password input is normal. If getpass warns about echo control, run in a
+real PyCharm Terminal or Debian terminal rather than an unsuitable output console.
+Do not type the password into the server terminal when the prompt is in the client.
+
+G. Server appears stuck generating keys
+First-run RSA-4096 and ElGamal parameter generation may be slow. This happens
+before Listening. Wait and check that no password/date prompt is awaiting input.
+Repeatedly interrupting setup can leave incomplete key files; see section 10.
+
+H. Green Run button behaves differently from the Terminal
+The interpreter or environment variables may differ. The simplest exam method
+is to use the two terminal commands in section 4 consistently. Shell exports and
+command prefixes in a Terminal do not automatically configure an IDE Run action.
+
+8. LOGIN, ROLES AND SUBMISSION ERRORS
+
+A. "Access denied" / authentication failed
+Use the password set for the SELECTED identity during first server setup.
+Passwords are case-sensitive. Check Caps Lock, keyboard layout and accidental
+spaces. The tally identity password is not an authority password.
+There is no built-in password-recovery menu; do not edit account hashes.
+
+B. "This entity cannot perform ..." / missing menu operation
+That identity lacks the required permission. Log in as an authorized identity.
+The server enforces permissions independently of menu visibility.
+To change the configured policy, generate a NEW application with the intended
+permissions. Do not edit only the client to bypass server access control.
+
+C. "Unknown identity" / "Submission identity mismatch"
+Check that client.py and server.py came from the same generation and that you
+are connecting to the intended server, not an older one on another port.
+
+D. "Record ID already exists"
+The server already has that ID. Check View own records/metadata to confirm whether
+an earlier attempt succeeded. For a genuinely new record, use a unique ID such
+as B2. Do not change IDs just to double-submit the same ballot after a timeout.
+
+E. Invalid record ID / record fields do not match / invalid choice
+IDs accept 1..40 letters, digits, underscore or hyphen; for example B1 or vote_02.
+Do not use spaces, slashes or paths as IDs.
+Supply each prompted field. For choice fields, use an allowed configured choice.
+For numeric fields, enter a nonnegative number without currency symbols,
+thousands separators or scientific notation. Respect the decimal-place limit.
+
+F. "Outside the submission period"
+The submission or server receipt time is outside the configured period.
+Check current IST and the configured dates. In a Linux terminal, you can inspect:
+
+    date -u
+    TZ=Asia/Kolkata date '+%Y-%m-%d %H:%M:%S'
+
+Do not change the system clock or edit signed records to force acceptance.
+For a new practice session, generate a fresh output folder and enter appropriate
+dates. Preserve the old application/data if you still need its records.
+
+G. "Client timestamp differs from server time by more than five minutes"
+Check the computer clock, whether the request was delayed and whether a remote
+client clock differs. On one machine the processes use the same system clock.
+Have lab staff correct an incorrect system clock; then retry with fresh input.
+The code checks a signed client timestamp; this is not a trusted timestamp service.
+
+H. "Submissions closed after aggregation"
+You configured closure on aggregation. Finish submitting ballots before tallying.
+Changing the port or restarting does not reopen the stored election.
+For another practice election, use a fresh generated output directory.
+
+9. HASH, SIGNATURE, CIPHER AND KEY ERRORS
+
+A. "Verification failed", invalid signature, receipt mismatch, hash mismatch,
+   "Encrypted total does not match the signed record", or "Search index mismatch"
+The record does not pass the required consistency checks. Possible causes include
+changed/corrupt files, mismatched keys, incompatible files or a tampered request.
+Do not bypass verification or manually patch the hash/signature/index.
+Use a known-good matching client/server and original intact data. For a rejected
+submission, correct the cause and submit again. For corrupted existing records,
+restore a consistent backup or start a separate fresh practice application.
+
+B. "Signing key differs from the enrolled identity key"
+The server has pinned this identity's signing public key, but the client now
+uses a different one. This often follows deleting client_keys or moving to a
+client folder without its original keys.
+Restore that identity's ORIGINAL client_keys folder and use the same password
+and application. Do not erase the server's signer registry to force acceptance.
+There is no automatic reenrollment/key-recovery feature.
+
+C. "MAC check failed" / padding error / incorrect decryption
+Context matters:
+  - At aggregate authority prompt: check the correct authority password.
+  - While loading client identity keys: check the password and intact client_keys.
+  - While reading encrypted records: keys/data may be corrupt or mismatched.
+A MAC failure is not normally fixed by changing the port. Restore matching
+files or credentials; do not disable the integrity check.
+
+D. "Padding is disabled ... multiple of block size"
+CBC/ECB without padding requires the COMPLETE serialized JSON payload to be
+block-aligned, not just the visible text field. For normal arbitrary input,
+generate a fresh application with CBC + PKCS7, or an allowed stream/authenticated
+mode with its appropriate padding setting. The voting sample uses CBC + PKCS7.
+
+E. Invalid IV/nonce length / reused nonce / unsupported mode
+Use the generator's valid mode settings. Random IV/nonce is the easiest default.
+AES CBC requires 16 IV bytes; DES/Triple-DES CBC uses 8. Do not confuse AES key
+length with block size. Do not modify stored IVs or ciphertext to fix a rejection.
+
+F. "Cipher settings differ from generated policy" / group/schema/key mismatch
+Use the matching generated pair. Do not mix a client from one configuration
+with a server from another, even if their ports match.
+
+10. STORAGE, RESTARTS AND FILE ERRORS
+
+server_data beside server.py stores server keys, records and aggregates.
+client_keys beside client.py stores password-encrypted client signing keys.
+Restarting normally reuses these. The port is unrelated to their contents.
+
+A. FileNotFoundError during a record/view/tally operation
+Read which file is missing. The requested record or aggregate may not exist,
+or necessary data/key files may have been removed. Check the record ID and
+whether you have created an aggregate. Confirm you launched the correct copy
+of server.py. Do not copy arbitrary key files from a different application.
+
+B. "Permission denied" while writing a file
+Put the generated application in a directory your user can write, such as a
+project folder under your home directory. A read-only USB or protected system
+folder is unsuitable. If moving an EXISTING application, stop it and preserve
+its entire server_data and client_keys folders too. Do not use chmod 777 or
+sudo Python as a blanket fix. Ask staff if ownership/access needs correcting.
+
+C. "No space left on device"
+Free space only from your own disposable files or ask staff for a writable
+location with space. Do not remove cryptographic keys or records to free space.
+After a failed write, check whether the operation committed before retrying.
+
+D. JSONDecodeError / invalid saved JSON
+A stored file may be incomplete, corrupted or manually edited. Preserve the
+error and data; restore a consistent backup. Do not replace it with an empty
+JSON object, because keys, receipts and records must remain consistent.
+
+E. "Incomplete setup. Use a fresh ... folder"
+Setup may have been interrupted after writing some keys. Do not keep retrying
+against half-created keys or combine keys from different attempts.
+For an empty/new practice application, generate into a NEW output folder and
+complete setup. Keep the old folder untouched if there may be useful data.
+
+F. "Configuration changed; use a new output/storage folder"
+You changed the embedded application configuration but reused old server_data.
+Restore the original matching programs, or generate a new application in a new
+folder. There is no automatic data/schema/key migration.
+
+G. Lost keys / forgotten passwords
+There is no universal recovery command. Keeping only ciphertext is insufficient
+when its required keys/passwords are lost. Restore a consistent backup if one
+exists; otherwise start a separate new practice application. Changing a port
+cannot recover a private key or decrypt old records.
+
+11. SEARCH AND TOTAL-VOTE/TALLY ERRORS
+
+A. Search returns no IDs
+Check that submission was ACCEPTED, the correct field is selected and the query
+matches stored data. Text search matches whole words, not arbitrary substrings;
+multiple words must all be present. Numeric/choice fields use exact matching.
+Time search uses IST submission times, start <= end, and at most seven days.
+Try a known constituency value from a ballot you just accepted.
+
+B. "Verify selected record first" / "Record must be verified again"
+Use an identity allowed to verify and verify the intended record. Network
+submissions are verified on acceptance, so this usually points to missing/stale
+verification state. If verification fails, fix the underlying integrity problem;
+do not fabricate a verified file.
+
+C. "Verify at least 2 records first" (or another configured minimum)
+Submit and accept enough records, and make sure the selected set is large enough.
+Having many stored records does not help if your current selection contains one.
+
+D. "No records selected" / duplicate IDs / missing selected record
+Use Select records and enter existing IDs, comma separated, e.g. B1,B2.
+Do not repeat an ID. Explicit selection remains stored; new ballots are not
+automatically added to that existing selection. Reselect the intended full list
+when necessary. If no selection exists, aggregation includes all stored records.
+
+E. No aggregate exists / aggregate file not found
+Choose Aggregate records first. Then view or decrypt its result.
+This is a real data dependency, not an enforced sequence of unrelated menu steps.
+
+F. "Aggregate is stale" / aggregate or selection was changed
+Use the original intact data. If selected records can be verified successfully,
+select the intended records and aggregate again. Do not manually edit the saved
+ciphertexts, IDs, receipts or seals. Investigate an integrity failure first.
+
+G. Wrong aggregate-decryption password
+There are THREE distinct credentials in this flow:
+  1. Tally identity login password.
+  2. Authority 1 password.
+  3. Authority 2 password.
+You need both authority passwords after login. Supplying only one is insufficient.
+Do not confuse either authority password with the Voter password.
+
+H. Vote total looks wrong
+Candidate-ID sum is NOT the vote count or candidate-wise tally.
+For ballots choosing candidates 1 and 2:
+  Record count = 2
+  Candidate 1 count = 1
+  Candidate 2 count = 1
+  Candidate 3 count = 0
+  Candidate-ID sum = 3
+
+To generate per-candidate counts, make CandidateID a CHOICE field, list its
+allowed values, and enable encrypted counts for each choice. Optionally enable
+the numeric-choice sum too. Check that the intended ballot IDs were included.
+
+I. Plaintext range / overflow / invalid partial decryption / category-count mismatch
+Do not ignore these mathematical checks. Use valid nonnegative inputs within
+the configured range and matching keys/records. An unexpected failure after
+valid input needs investigation with the exact error, not a changed port.
+
+The current two-authority arithmetic runs on one trusted server. It is not a
+fully distributed threshold cryptosystem. Aggregation multiplies Paillier
+ciphertexts; authorized aggregate decryption follows separately.
+
+12. TLS / REMOTE ERRORS (SKIP FOR THE NORMAL ONE-COMPUTER EXAM)
+
+Use 127.0.0.1 when both programs run on the SAME computer. On different computers,
+127.0.0.1 refers to each computer itself; it does not identify the other machine.
+This generated application refuses remote raw-TCP connections without TLS.
+
+Errors mentioning CRYPTO_TLS_CA, CRYPTO_TLS_CERT or CRYPTO_TLS_KEY indicate remote
+or TLS configuration. Remote TLS requires correctly provisioned certificates,
+a matching hostname and network access; it is not fixed by disabling verification.
+Ask the instructor if a genuinely separate-machine setup is required.
+
+If you accidentally enabled TLS environment variables but intend ONLY a local
+unencrypted demonstration, stop both programs and run in EACH terminal:
+
+    unset CRYPTO_TLS_CA CRYPTO_TLS_CERT CRYPTO_TLS_KEY
+
+Then use the explicit 127.0.0.1 commands from section 4. Do not do this for a
+remote/untrusted network setup. Local raw TCP itself provides no transport secrecy.
+
+13. SAFE STOP, RESTART AND QUICK RECOVERY
+
+Normal stop:
+  - Client: log out with 0; at its identity menu choose 0 to exit.
+  - Server: Ctrl+C in Terminal 1.
+
+Restart:
+  - Run the SAME server.py with the chosen host/port.
+  - Wait for Listening.
+  - Run the matching client.py with the same host/port.
+  - Existing records/keys remain. No need to rerun the generator.
+
+If the connection breaks after you send a request, check whether it completed
+before repeating it. This is especially important for a ballot submission.
+
+FAST EXAM RECOVERY FOR PORT/CONNECTION TROUBLE:
+  1. Stop only your own old client/server.
+  2. In both terminals, cd to the correct generated folder.
+  3. Terminal 1:
+       CRYPTO_HOST=127.0.0.1 CRYPTO_PORT=5050 python3 server.py
+  4. Wait for Listening.
+  5. Terminal 2:
+       CRYPTO_HOST=127.0.0.1 CRYPTO_PORT=5050 python3 client.py
+  6. If still failing, read the exact error and use its section above.
+
+For an unlisted error, keep:
+  - Exact command and which terminal ran it.
+  - Full traceback/error from BOTH terminals.
+  - python3 --version and interpreter path.
+  - Whether Listening appeared and which host/port it printed.
+  - The menu action and record ID involved (omit passwords/private keys).
+
+Do not delete server_data/client_keys, disable verification, or change unrelated
+crypto code as a generic troubleshooting step.
+
+REFERENCE LINKS FOR DEPENDENCY SETUP
+PyCryptodome installation and Crypto/Cryptodome namespaces:
+https://www.pycryptodome.org/src/installation
+Debian package file list (Cryptodome namespace):
+https://packages.debian.org/trixie/amd64/python3-pycryptodome/filelist
+
+The application-specific errors above were checked against the generated source.
+Commands are Linux shell instructions; they were not executed on your lab PC.
+
+
+Yes, bro—you can run two terminals simultaneously inside PyCharm. You don’t need separate Debian terminal windows, although those also work.
+
+1. Open your generated folder in PyCharm
+
+It should contain both:
+client.py
+server.py
+
+2. Start the SERVER first
+
+Open PyCharm’s Terminal tab. Make sure you’re in the folder containing the files:
+ls
+
+Then run:
+CRYPTO_HOST=127.0.0.1 CRYPTO_PORT=5000 python3 server.py
+
+On the first run, enter the requested dates and passwords. Wait until it prints:
+Listening on 127.0.0.1:5000. Ctrl+C to stop.
+
+Leave this terminal running.
+
+3. Open a SECOND terminal in PyCharm
+
+Use the + / New Session control in the Terminal window. This creates another shell without stopping the server.
+
+In that second terminal, go to the same generated folder if necessary, then run:
+CRYPTO_HOST=127.0.0.1 CRYPTO_PORT=5000 python3 client.py
+
+4. Use the menus in the CLIENT terminal
+
+Choose your role, enter its password and perform operations. The server handles requests in the background.
+Terminal	Runs	What you do there
+Terminal 1	server.py	Initial setup, then leave running
+Terminal 2	client.py	Login, submit, search, tally and other menus
+
+
+Order: server → wait for “Listening” → client. You do not need to run generator.py again once these files have been generated.

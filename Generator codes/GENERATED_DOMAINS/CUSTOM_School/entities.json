@@ -1,0 +1,20 @@
+{
+  "student": [
+    "submit_record"
+  ],
+  "teacher": [
+    "submit_record",
+    "verify_record",
+    "view_record"
+  ],
+  "hod": [
+    "submit_record",
+    "verify_record",
+    "view_record",
+    "search_records",
+    "aggregate_records"
+  ],
+  "vp": [
+    "aggregate_records"
+  ]
+}

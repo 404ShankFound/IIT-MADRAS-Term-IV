@@ -1,0 +1,154 @@
+DEBIAN + PYCHARM: EXAM DEPENDENCY PREFLIGHT
+
+1. Save exam_preflight.py in your project folder. Use the same PyCharm interpreter
+   you will use for generator.py/client.py/server.py during the exam.
+2. Keep internet ON for the initial setup. Run the script from PyCharm's Run
+   action, or from its terminal:
+
+       python3 exam_preflight.py
+
+   Default scope: all listed built-in imports, PyCryptodome and phe.
+   It automatically attempts pip installation/upgrading if an external package
+   fails its import or functional test. It then tests again in a fresh process.
+   Installed and working packages are left alone.
+
+3. If your exam code needs Zama Concrete FHE, include it explicitly:
+
+       python3 exam_preflight.py --with-concrete
+
+   For PyCharm's Run action, add --with-concrete to the script parameters in its
+   run configuration. The Terminal command is also sufficient if it uses the
+   same interpreter. The correct pip package is concrete-python, NOT concrete.
+   Concrete's compiler/key generation test can be heavy and take several minutes.
+   The script waits at least 600 seconds for that test; a timeout is a failure,
+   not evidence that it works. Installation has a 20-minute timeout per package.
+   Only enable this if you need FHE: the generator/client/server do not use it.
+
+4. Verify your actual source files too:
+
+       python3 exam_preflight.py --scan generator.py client.py server.py
+
+   Supply the actual file paths, quoted if they contain spaces. Code saved as
+   .txt is accepted if its contents are valid Python. Embedded generator template
+   strings are scanned too. The code is parsed, not executed, by this scan.
+   Without --scan, generator.py/client.py/server.py beside this checker are
+   scanned if present. Built-in dependency checks still run even if they are not.
+   Unknown imports and syntax/read failures are reported, not silently skipped.
+   An unknown name might be YOUR local module, not a package from pip: the
+   script deliberately never guesses arbitrary package names to install.
+   Dynamic imports and every possible generated/external code path cannot be
+   discovered by static scanning; run your real application afterward too.
+
+5. Once setup succeeds, run the non-installing check:
+
+       python3 exam_preflight.py --check-only
+
+   Or, if FHE is required:
+
+       python3 exam_preflight.py --check-only --with-concrete
+
+   Do this on the actual lab machine/interpreter. If possible, disconnect internet
+   and repeat the check to prove installed packages work without downloads.
+   --check-only never invokes an install or ensurepip command.
+
+WHAT IT CHECKS
+- Every listed built-in module, including random, base64, pickle, unittest.mock,
+  tempfile and types; gcd/lcm, randbelow, scrypt, SHA512, file I/O and localhost TCP.
+- All required Crypto imports, including inverse and getPrime.
+- 23 AES/DES/Triple-DES algorithm/mode combinations with actual encrypt/decrypt.
+- RSA-4096 OAEP key wrapping, RSA signing, ECDH shared-secret agreement,
+  Schnorr arithmetic, and actual ElGamal signature arithmetic.
+- The generator's Paillier sum and two-share exponent arithmetic with disposable
+  small test keys. This does not certify distributed threshold security.
+- phe: generated test keys, encrypted addition and scalar multiplication.
+- Optional Concrete: import, compile, key generation, encrypted evaluation and
+  decrypting 2 + 3 = 5. This is not just an import check.
+- pip check for installed-distribution dependency conflicts.
+
+EXTERNAL PACKAGE MAPPING
+  Crypto.*               -> pycryptodome
+  from phe import paillier -> phe
+  from concrete import fhe -> concrete-python (optional)
+
+No separate installation of AES, DES, RSA, gcd, lcm, hashlib, socket, math,
+random, pickle, secrets, unittest or other built-in modules is needed.
+Package dependencies are resolved by pip automatically when an install succeeds.
+The code does not need a separate paillier/phe package for its custom Paillier
+implementation; phe is included because your additional snippets import it.
+
+REPORTS SAVED BESIDE THE CHECKER
+  preflight_report.txt       Full results and installation errors.
+  requirements_verified.txt  Exact versions of selected packages that PASSED.
+  environment_snapshot.txt   Full pip freeze, if pip is available.
+
+requirements_verified.txt deliberately excludes failed/skipped packages. It is
+NOT a complete transitive lockfile. The snapshot includes unrelated installed
+packages too; do not blindly install the entire snapshot on another platform.
+The report is authoritative about which tests passed or were skipped.
+A nonzero exit status means at least one selected check needs attention.
+GENERATOR DEPENDENCY CHECK can pass while optional phe/Concrete tests fail.
+ALL SELECTED CHECKS only covers the displayed selection; without Concrete it
+makes no claim about FHE readiness.
+
+DEBIAN INSTALLATION PROBLEMS
+- externally-managed-environment: Debian blocks pip changes to that interpreter.
+  The script will report the failure. Ask lab staff for an approved interpreter
+  or preinstalled dependencies. It does not create a virtual environment, run
+  sudo, or use --break-system-packages. If your exam forbids environments or
+  installation, that restriction must be resolved before the exam with staff.
+- No module named pip: the script tries Python's ensurepip. Debian may disable
+  this. If so, ask the administrator to provide pip/dependencies for the selected
+  interpreter; for Debian's system Python this may involve python3-pip.
+- Only import Cryptodome works: Debian's package may use that namespace, whereas
+  your generated files import Crypto. These are not interchangeable import names.
+  Arrange a compatible interpreter or reviewed code adaptation before the exam.
+- No matching distribution: package/Python/CPU compatibility or index/network issue.
+  Do not assume any Python version supports Concrete. Consult its official install
+  page and use a supported interpreter; this script does not change your Python.
+- Network/proxy/certificate errors: fix the authorized network setup. The script
+  does not disable TLS verification or add untrusted package indexes.
+- Permission/disk errors: use an approved writable environment with enough space.
+- Local files named Crypto.py, concrete.py, phe.py, math.py, socket.py, json.py,
+  or matching folders can hide the installed module. Rename your conflicting
+  project file; do not rename/delete installed package directories. The report
+  prints external module locations to help identify this.
+- pip reports installed, but a test still fails: read the functional-test error.
+  An install result alone never counts as passing. You may have shadowing,
+  incompatible native dependencies, package conflicts or a broken installation.
+
+OFFLINE BACKUP (OPTIONAL, DO BEFORE INTERNET IS REMOVED)
+On the SAME Debian/Python/CPU environment after all required packages pass:
+
+    python3 -m pip download --only-binary=:all: --dest wheelhouse -r requirements_verified.txt
+
+This asks pip to download compatible wheels and their dependencies. It can fail
+if a suitable binary wheel is unavailable. Do not call the backup complete unless
+this command succeeds. Keep wheelhouse with the requirements file.
+If installation is allowed and you later need the backup on a compatible system:
+
+    python3 -m pip install --no-index --find-links=wheelhouse -r requirements_verified.txt
+
+Offline wheels do not bypass Debian's installation policy and are not necessarily
+portable across Python versions, operating systems or CPU architectures.
+
+AFTER DEPENDENCY CHECKS
+Run your actual generator, generate a client/server pair, start server first,
+then client, submit records, search, aggregate and decrypt. Confirm your selected
+roles, dates and ports work. Keep both server_data and client_keys intact.
+No checker can guarantee no application errors for every future question/input.
+
+VALIDATION PERFORMED FOR THIS DELIVERABLE
+- Actual standard-library and PyCryptodome functional checks passed here.
+- Detected missing phe correctly with --check-only, without installing it.
+- In install mode, automatically installed phe and its functional test passed.
+- Scanned your generator and client/server, including embedded code imports.
+- pip check passed in this environment.
+- Concrete is NOT installed/tested in this environment. Its optional probe and
+  install route are provided; your machine must run them to establish readiness.
+- This is not a claim that anything has already been installed on your lab PC.
+
+OFFICIAL REFERENCES
+https://www.pycryptodome.org/src/installation
+https://pypi.org/project/phe/
+https://docs.zama.org/concrete/get-started/installing
+https://docs.zama.org/concrete/get-started/quick_start

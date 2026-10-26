@@ -1,0 +1,12 @@
+{
+  "encryption": "AES-128",
+  "hash": "MD5",
+  "key": "RSA",
+  "signature": "RSA",
+  "search": "PKSE",
+  "rsa_bits": {
+    "key": 2048,
+    "signature": 2048,
+    "search": 2048
+  }
+}

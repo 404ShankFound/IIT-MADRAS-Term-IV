@@ -1,0 +1,12 @@
+{
+  "researcher": [
+    "submit_record"
+  ],
+  "review": [
+    "view_record"
+  ],
+  "fo": [
+    "aggregate_records",
+    "threshold_decrypt"
+  ]
+}

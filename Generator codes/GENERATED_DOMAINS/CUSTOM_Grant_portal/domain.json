@@ -1,0 +1,23 @@
+{
+  "title": "Grant portal",
+  "record_name": "Grant",
+  "fields": [
+    {
+      "name": "Description",
+      "type": "text",
+      "search": true,
+      "sum": false,
+      "count": false
+    },
+    {
+      "name": "Amount",
+      "type": "integer",
+      "search": true,
+      "sum": true,
+      "count": false
+    }
+  ],
+  "use_deadline": false,
+  "close_on_aggregate": false,
+  "min_records": 1
+}

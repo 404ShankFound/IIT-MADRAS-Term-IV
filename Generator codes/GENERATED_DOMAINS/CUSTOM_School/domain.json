@@ -1,0 +1,44 @@
+{
+  "title": "School",
+  "record_name": "Result",
+  "fields": [
+    {
+      "name": "Maths",
+      "type": "integer",
+      "search": true,
+      "sum": true,
+      "count": false
+    },
+    {
+      "name": "Physics",
+      "type": "integer",
+      "search": true,
+      "sum": true,
+      "count": false
+    },
+    {
+      "name": "Chemistry",
+      "type": "integer",
+      "search": true,
+      "sum": true,
+      "count": false
+    },
+    {
+      "name": "English",
+      "type": "integer",
+      "search": true,
+      "sum": true,
+      "count": false
+    },
+    {
+      "name": "PhyEdu",
+      "type": "integer",
+      "search": true,
+      "sum": true,
+      "count": false
+    }
+  ],
+  "use_deadline": true,
+  "close_on_aggregate": true,
+  "min_records": 2
+}
