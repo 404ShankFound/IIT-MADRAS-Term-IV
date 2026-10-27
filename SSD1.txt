@@ -1,0 +1,121 @@
+#include <LPC17xx.h>
+
+// Pin connections assumed:
+// Seven-segment segments a-g, dp : P0.4 to P0.11 (output)
+// Digit select / decoder inputs  : P1.23 to P1.26 (output)
+// Up/down switch                 : P2.12 (input)
+// Switch pressed (LOW)           : Count UP
+// Switch released (HIGH)          : Count DOWN
+// Assumes the decoder and display polarity match the lab kit.
+//
+// Timer 0 is used to generate a 1-second delay.
+// Assumes a 25 MHz Timer 0 clock; verify the clock setup.
+
+unsigned int number = 0;
+unsigned int count, i, j, n;
+unsigned int digit;
+unsigned int switch_status;
+
+unsigned char ssd[16] = {
+    0x3F, 0x06, 0x5B, 0x4F,
+    0x66, 0x6D, 0x7D, 0x07,
+    0x7F, 0x6F, 0x77, 0x7C,
+    0x39, 0x5E, 0x79, 0x71
+};
+
+void timer0_delay_1s(void)
+{
+    // Configure Timer 0 for a 1-second match.
+    LPC_TIM0->TCR = 0x02;       // Reset timer
+    LPC_TIM0->CTCR = 0x00;      // Timer mode
+    LPC_TIM0->PR = 24999;       // 1 ms per timer count at 25 MHz
+    LPC_TIM0->MR0 = 999;        // 1000 x 1 ms = 1 second
+    LPC_TIM0->MCR = 0x04;       // Stop timer on MR0 match
+    LPC_TIM0->IR = 0x3F;        // Clear pending timer flags
+    LPC_TIM0->TCR = 0x01;       // Start timer
+
+    while ((LPC_TIM0->IR & 0x01) == 0);
+
+    LPC_TIM0->IR = 0x01;        // Clear MR0 interrupt flag
+    LPC_TIM0->TCR = 0x00;       // Stop timer
+}
+
+void display_number(unsigned int num)
+{
+    unsigned int k;
+    unsigned int temp;
+
+    temp = num;
+
+    for (k = 0; k < 4; k++)
+    {
+        digit = temp % 10;
+
+        // Select one digit through the decoder.
+        LPC_GPIO1->FIOPIN = (k << 23);
+
+        // Send the segment pattern to P0.4-P0.11.
+        LPC_GPIO0->FIOPIN =
+            (LPC_GPIO0->FIOPIN & ~(0xFF << 4))
+            | ((unsigned int)ssd[digit] << 4);
+
+        // Short delay for multiplexing.
+        for (j = 0; j < 1000; j++);
+
+        temp = temp / 10;
+    }
+}
+
+int main(void)
+{
+    SystemInit();
+    SystemCoreClockUpdate();
+
+    // Configure pins as GPIO.
+    LPC_PINCON->PINSEL0 &= ~(0x03FF << 8);
+    LPC_PINCON->PINSEL1 &= ~(0x03FF << 0);
+    LPC_PINCON->PINSEL3 &= ~(0xFF << 14);
+    LPC_PINCON->PINSEL4 &= ~(0x03 << 24);
+
+    // Segment outputs: P0.4-P0.11.
+    LPC_GPIO0->FIODIR |= (0xFF << 4);
+
+    // Digit decoder outputs: P1.23-P1.26.
+    LPC_GPIO1->FIODIR |= (0x0F << 23);
+
+    // Switch input: P2.12.
+    LPC_GPIO2->FIODIR &= ~(1 << 12);
+
+    // Timer 0 power enable.
+    LPC_SC->PCONP |= (1 << 1);
+
+    // Configure Timer 0 prescaler for 1 ms increments.
+    LPC_SC->PCLKSEL0 &= ~(0x03 << 2);
+    LPC_SC->PCLKSEL0 |=  (0x01 << 2);  // PCLK = CCLK
+
+    while (1)
+    {
+        // Refresh display continuously for approximately 1 second.
+        for (count = 0; count < 100; count++)
+        {
+            display_number(number);
+        }
+
+        // Active-LOW switch: pressed = UP, released = DOWN.
+        switch_status = (LPC_GPIO2->FIOPIN >> 12) & 1;
+
+        if (switch_status == 0)
+        {
+            number = (number + 1) % 10000;
+        }
+        else
+        {
+            if (number == 0)
+                number = 9999;
+            else
+                number--;
+        }
+
+        timer0_delay_1s();
+    }
+}
